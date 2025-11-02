@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=File Organizer
+Comment=Organize files by category
+Exec=file-organizer
+Icon=/usr/share/pixmaps/file-organizer.png
+Terminal=false
+Type=Application
+Categories=Utility;FileTools;GTK;
+Keywords=files;organize;sort;cleanup;
+StartupWMClass=file-organizer

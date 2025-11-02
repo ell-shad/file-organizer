@@ -1,0 +1,10 @@
+Package: file-organizer
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.8), python3-tk, python3-matplotlib
+Maintainer: Your Name <your.email@example.com>
+Description: File Organizer
+ A graphical tool to organize files by category with undo support
+ and statistics visualization.
