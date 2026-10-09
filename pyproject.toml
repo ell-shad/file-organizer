@@ -26,8 +26,8 @@ dependencies = []
 [project.optional-dependencies]
 gui-qt = ["PySide6>=6.6"]
 gui-tk = ["matplotlib"]
-test = ["pytest>=7"]
-all = ["PySide6>=6.6", "matplotlib", "pytest>=7"]
+test = ["pytest>=9.1.1"]
+all = ["PySide6>=6.6", "matplotlib", "pytest>=9.1.1"]
 
 [project.scripts]
 file-organizer = "file_organizer.cli:main"
