@@ -109,7 +109,7 @@ jobs:
           path: dist/file-organizer
 
   install-test:
-    name: Install .deb with apt and run CLI
+    name: Install .deb and verify the Qt interface (not the Tk fallback)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -117,13 +117,22 @@ jobs:
         run: |
           chmod +x build-deb.sh
           ./build-deb.sh --output-dir dist
-      - name: Install with apt (resolves python3-pyside6 or python3-tk)
+      - name: Install with apt (pulls PySide6 subpackages)
         run: |
           sudo apt-get update -qq
           sudo apt install -y ./dist/*.deb
           dpkg -s file-organizer | grep -E "^(Status|Depends)"
+      - name: PySide6 must be importable after install
+        # Regression guard: 'python3-pyside6' metapackage does not exist on
+        # Ubuntu 24.04+, so the deb must depend on the qtcore/qtgui/qtwidgets
+        # subpackages or apt silently installs only the Tk fallback.
+        run: python3 -c "import PySide6; print('PySide6', PySide6.__version__)"
       - name: CLI works from the installed package
         run: |
           mkdir -p /tmp/it && echo x > /tmp/it/a.jpg
           file-organizer scan /tmp/it
           file-organizer organize /tmp/it --dry-run
+      - name: Tk fallback chart renders without matplotlib
+        run: |
+          sudo apt-get install -y xvfb > /dev/null
+          xvfb-run -a python -m pytest tests/test_gui_tk_fallback.py -q

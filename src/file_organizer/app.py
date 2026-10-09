@@ -20,13 +20,24 @@ def run_gui(toolkit: str = "auto") -> int:
         except ImportError as exc:
             if toolkit == "qt":
                 print("error: PySide6 is required for the Qt interface.\n"
-                      "Install it with: pip install 'file-organizer[gui-qt]' "
-                      "or your distro package (e.g. python3-pyside6).",
+                      "  Debian/Ubuntu: sudo apt install python3-pyside6.qtcore "
+                      "python3-pyside6.qtgui python3-pyside6.qtwidgets\n"
+                      "  or pip install PySide6",
                       file=sys.stderr)
                 print(f"(import error: {exc})", file=sys.stderr)
                 return 1
-            print("note: PySide6 not found, falling back to legacy Tk interface. "
-                  "Install PySide6 for the modern GUI.", file=sys.stderr)
+            # Auto mode must not silently look like the old app: the legacy
+            # fallback looks different and lacks preview/threading, so tell the
+            # user exactly which interface they got and how to get the Qt one.
+            print("=" * 68, file=sys.stderr)
+            print("WARNING: PySide6 not found — starting the LEGACY Tk interface.", file=sys.stderr)
+            print("  This is the old v1 UI. It has no preview, no progress bar", file=sys.stderr)
+            print("  and no HiDPI scaling.", file=sys.stderr)
+            print("  For the modern Qt interface:", file=sys.stderr)
+            print("    sudo apt install python3-pyside6.qtcore python3-pyside6.qtgui \\", file=sys.stderr)
+            print("                         python3-pyside6.qtwidgets", file=sys.stderr)
+            print("  (or use the self-contained binary from the Releases page)", file=sys.stderr)
+            print("=" * 68, file=sys.stderr)
     # Tk fallback (legacy v1 interface, no matplotlib required)
     try:
         import tkinter  # noqa: F401

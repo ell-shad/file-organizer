@@ -31,8 +31,9 @@ except ImportError as exc:
     # to the legacy Tk interface (or prints install instructions). Swallowing
     # it here would die later with a confusing NameError on QWidget.
     raise ImportError(
-        "PySide6 is required for the Qt interface: "
-        "'sudo apt install python3-pyside6' or 'pip install PySide6'"
+        "PySide6 is required for the Qt interface. Debian/Ubuntu: "
+        "'sudo apt install python3-pyside6.qtcore python3-pyside6.qtgui "
+        "python3-pyside6.qtwidgets' (or 'pip install PySide6')"
     ) from exc
 
 

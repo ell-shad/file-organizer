@@ -61,6 +61,8 @@ class FileOrganizerApp:
         self.checkbox_vars = {}
         self.file_types_config = FILE_TYPES.copy()
         self.last_move_log = []
+        self._last_counts = {}
+        self.chart_note = None  # only used by the no-matplotlib fallback
 
         # --- Main Layout ---
         self.main_frame = tk.Frame(self.root, padx=10, pady=10)
@@ -104,14 +106,35 @@ class FileOrganizerApp:
         self.log_text = tk.Text(self.main_frame, height=5, state=tk.DISABLED, bg='light gray', fg='black')
         self.log_text.pack(pady=5, fill=tk.BOTH)
 
-        # Matplotlib Plot Section (optional; legacy chart)
+        # Chart area. Prefers matplotlib; falls back to a native Tk Canvas
+        # pie so the graph still works when matplotlib is not installed
+        # (v2.0 made matplotlib optional, but the chart must not vanish).
         self.fig = self.ax = self.canvas = self.canvas_widget = None
+        self.chart_frame = tk.Frame(self.main_frame)
+        self.chart_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        self.chart_canvas = None
         if _HAS_MPL:
             self.fig, self.ax = plt.subplots(figsize=(6, 4))
-            self.canvas = FigureCanvasTkAgg(self.fig, master=self.main_frame)
+            self.canvas = FigureCanvasTkAgg(self.fig, master=self.chart_frame)
             self.canvas_widget = self.canvas.get_tk_widget()
-            #self.canvas_widget.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=10)
+            self.canvas_widget.pack(fill=tk.BOTH, expand=True)
             self.update_plot({})
+        else:
+            self.chart_canvas = tk.Canvas(self.chart_frame, height=240,
+                                           background="white", highlightthickness=1,
+                                           borderwidth=1)
+            self.chart_canvas.pack(fill=tk.BOTH, expand=True)
+            self.chart_frame.pack_forget()
+            # Tk canvases have zero size until mapped; redraw once sized.
+            self.chart_canvas.bind("<Configure>",
+                                   lambda _e: self.update_plot(self._last_counts))
+            self.chart_note = tk.Label(
+                self.main_frame,
+                text="basic chart: install python3-matplotlib for "
+                     "matplotlib styling",
+                foreground="gray")
+            # Visibility is managed by update_plot (only useful once the
+            # fallback chart is actually showing data).
 
         # Menu Bar
         menubar = tk.Menu(root)
@@ -165,14 +188,14 @@ class FileOrganizerApp:
             self.selected_directory = directory
             self.dir_label.config(text=f"Selected directory:\n{directory}")
             self.check_files_in_directory()
-            if self.canvas_widget is not None:
-                self.canvas_widget.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=10)
+            # Always show the chart area once a directory is chosen.
+            # (the chart hint is hidden by update_plot once data is drawn)
+            self.chart_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
         else:
             self.dir_label.config(text="No directory selected.")
             self.selected_directory = ""
             self.update_plot({})
-            if self.canvas_widget is not None:
-                self.canvas_widget.pack_forget()
+            self.chart_frame.pack_forget()
 
         self.update_organize_button_state()
 
@@ -212,26 +235,85 @@ class FileOrganizerApp:
             self.organize_btn.config(state=tk.DISABLED)
             
     def update_plot(self, file_counts):
-        """Updates the pie chart with new file statistics."""
-        if not _HAS_MPL or self.ax is None:
-            return
-        self.ax.clear()
+        """Updates the pie chart with new file statistics.
+
+        Uses matplotlib when available, otherwise draws the pie directly on
+        a native Tk Canvas so the chart is never silently missing.
+        """
         labels, sizes = [], []
         for category, count in file_counts.items():
             if count > 0:
                 labels.append(category)
                 sizes.append(count)
+        self._last_counts = dict(file_counts or {})
 
-        if sizes:
-            self.ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
-            self.ax.axis('equal')
-            self.ax.set_title("Directory File Distribution")
-        else:
-            self.ax.text(0.5, 0.5, "Select a directory to view statistics", horizontalalignment='center', 
-                         verticalalignment='center', transform=self.ax.transAxes, fontsize=12)
-            self.ax.set_title("Directory File Distribution")
+        # The hint only makes sense while the reduced fallback chart is on
+        # screen: no data yet, or data drawn without matplotlib.
+        if self.chart_note is not None:
+            want = bool(sizes)
+            if want and not self.chart_note.winfo_ismapped():
+                self.chart_note.pack(pady=(0, 5))
+            elif not want and self.chart_note.winfo_ismapped():
+                self.chart_note.pack_forget()
 
-        self.canvas.draw()
+        if _HAS_MPL and self.ax is not None:
+            self.ax.clear()
+            if sizes:
+                self.ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+                self.ax.axis('equal')
+                self.ax.set_title("Directory File Distribution")
+            else:
+                self.ax.text(0.5, 0.5, "Select a directory to view statistics",
+                             horizontalalignment='center', verticalalignment='center',
+                             transform=self.ax.transAxes, fontsize=12)
+                self.ax.set_title("Directory File Distribution")
+            self.canvas.draw()
+            return
+
+        self._draw_canvas_pie(labels, sizes)
+
+    # Tk Canvas colors (same palette as the Qt chart)
+    _TK_COLORS = ["#4C8DDA", "#E06C5B", "#63B267", "#C9902E", "#9B72CF",
+                  "#4DB6AC", "#E3919B", "#7E9BB5", "#A5B841", "#8D6E63"]
+
+    def _draw_canvas_pie(self, labels, sizes):
+        """Fallback pie chart drawn with Tk Canvas primitives (no deps)."""
+        if self.chart_canvas is None:
+            return
+        c = self.chart_canvas
+        c.delete("all")
+        w = c.winfo_width()
+        h = c.winfo_height()
+        if w <= 1 or h <= 1:  # not yet mapped; retry on Configure
+            return
+
+        if not sizes:
+            c.create_text(w / 2, h / 2, text="Select a directory\nto view statistics",
+                          fill="gray", font=("Arial", 12))
+            return
+
+        total = sum(sizes)
+        side = max(min(w - 160, h - 60), 60)
+        x0, y0 = 20, 20
+        x1, y1 = x0 + side, y0 + side
+        start = 90.0
+        for i, value in enumerate(sizes):
+            extent = 360.0 * value / total
+            # Tk wants clockwise-positive angles measured from 3 o'clock.
+            c.create_arc(x0, y0, x1, y1, start=start, extent=-extent,
+                         fill=self._TK_COLORS[i % len(self._TK_COLORS)],
+                         outline="white", width=2)
+            start -= extent
+
+        # Legend with counts
+        ly = y0 + 10
+        for i, (label, value) in enumerate(zip(labels, sizes)):
+            pct = 100.0 * value / total
+            c.create_rectangle(x1 + 14, ly, x1 + 28, ly + 14,
+                               fill=self._TK_COLORS[i % len(self._TK_COLORS)], outline="")
+            c.create_text(x1 + 34, ly + 7, anchor="w",
+                          text=f"{label}: {value} ({pct:.0f}%)", font=("Arial", 9))
+            ly += 20
 
     def update_organize_button_state(self):
         """Enables/disables buttons based on conditions."""

@@ -4,7 +4,11 @@
 [![CI](https://github.com/ell-shad/file-organizer/actions/workflows/ci.yml/badge.svg)](https://github.com/ell-shad/file-organizer/actions/workflows/ci.yml)
 [![GitHub release](https://img.shields.io/github/release/ell-shad/file-organizer.svg)](https://github.com/ell-shad/file-organizer/releases)
 
-A modern GUI application for organizing files by category on Linux.
+A modern GUI application for organizing files by category.
+
+**Official support is for Debian-based systems** (Debian, Ubuntu, Linux Mint,
+Pop!_OS, and derivatives), where it installs as a normal `.deb` package.
+Other Linux distributions may work but are not officially supported or tested.
 
 ![File Organizer v2 Qt interface](screenshots/main-window-qt.png)
 
@@ -24,12 +28,24 @@ A modern GUI application for organizing files by category on Linux.
 
 ### Native package (recommended)
 
+This is the main installation method for the officially supported
+Debian-based systems. It installs the app, its desktop entry and icon, and
+apt pulls in Qt automatically:
+
 ```bash
 sudo apt install ./file-organizer_2.0.0_all.deb
 ```
 
 Get the `.deb` from [Releases](https://github.com/ell-shad/file-organizer/releases)
 or build it: `./build-deb.sh`.
+
+You should see the modern Qt interface after installing. If a console
+message appears saying it started the "LEGACY Tk interface", Qt is missing —
+fix it with:
+
+```bash
+sudo apt install python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets
+```
 
 ### Self-contained binary (no Python, no Qt, nothing to install)
 
@@ -129,6 +145,7 @@ builds everything, and publishes a GitHub Release with artifacts.
 
 Legacy v1 screenshots are kept under `screenshots/` (`main-window.png`,
 `statistics.png`, `file_types.png`) for reference.
+`main-window-tk-fallback.png` shows the Tk fallback used when Qt is absent.
 
 ## Contributing
 
