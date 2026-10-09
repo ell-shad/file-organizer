@@ -13,7 +13,7 @@ jobs:
       matrix:
         python: ["3.10", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
@@ -29,7 +29,7 @@ jobs:
     name: Qt GUI smoke test (offscreen)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -58,7 +58,7 @@ jobs:
     name: .deb builds
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build .deb
         run: |
           chmod +x build-deb.sh
@@ -75,7 +75,7 @@ jobs:
     container:
       image: debian:stable-slim
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Python + pytest
         run: apt-get update -qq && apt-get install -y -qq python3 python3-pytest > /dev/null
       - name: Run core tests (no Qt needed)
@@ -85,7 +85,7 @@ jobs:
     name: Self-contained binary (PyInstaller)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
@@ -112,7 +112,7 @@ jobs:
     name: Install .deb and verify the Qt interface (not the Tk fallback)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
