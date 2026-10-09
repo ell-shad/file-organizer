@@ -3,8 +3,9 @@ Version: 2.0.0
 Section: utils
 Priority: optional
 Architecture: all
-Depends: python3 (>= 3.9), python3-pyside6.qtcore, python3-pyside6.qtgui, python3-pyside6.qtwidgets
-Suggests: python3-tk, python3-matplotlib
+Depends: python3 (>= 3.9), python3-tk
+Recommends: python3-pyside6.qtcore, python3-pyside6.qtgui, python3-pyside6.qtwidgets
+Suggests: python3-matplotlib
 Maintainer: Elshad Guliyev <ellshad.012@gmail.com>
 Homepage: https://github.com/ell-shad/file-organizer
 Description: File Organizer - sort files by category

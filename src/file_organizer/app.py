@@ -52,6 +52,8 @@ def run_gui(toolkit: str = "auto") -> int:
         root.wm_class("file-organizer")
     except Exception:
         pass
-    legacy.FileOrganizerApp(root)
+    app = legacy.FileOrganizerApp(root)
+    if toolkit == "auto" and getattr(app, "fallback_banner", None) is not None:
+        app.fallback_banner.pack(fill="x", padx=10, pady=(10, 0))
     root.mainloop()
     return 0

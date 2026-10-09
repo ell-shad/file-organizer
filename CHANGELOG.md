@@ -25,16 +25,19 @@ Full rewrite of the app layer around a shared, tested core.
 - Optional "Other" bucket and recursive mode
 
 ### Fixed (v2.0.1 audit)
-- **`.deb` installed the legacy GUI on Ubuntu 24.04+/26.04**: the
-  `Depends: python3-pyside6` metapackage does not exist on those releases
-  (PySide6 ships as `python3-pyside6.qtcore`/`qtgui`/`qtwidgets`), so apt
-  silently fell through to the Tk alternative. Now depends on the real
-  subpackage names and installs the Qt interface by default
+- **`.deb` silently installed the legacy GUI**: PySide6 ships on Ubuntu as
+  the subpackages `python3-pyside6.qtcore`/`qtgui`/`qtwidgets` (there is no
+  `python3-pyside6` metapackage), so the old dependency never resolved and
+  apt fell through to the Tk alternative. Qt is now a `Recommends` using
+  the real package names: installs the Qt UI where the release ships Qt,
+  and still installs cleanly where it does not (Ubuntu 24.04 has no PySide6
+  in apt at all)
+- **The fallback now announces itself in-window**: a yellow dismissible
+  banner explains that the legacy interface is active and gives the exact
+  command to install Qt, instead of the app silently looking like v1
 - **Empty chart in the Tk fallback**: without matplotlib the fallback drew
   nothing at all; it now renders a dependency-free pie + legend on a native
   Tk Canvas (covered by `tests/test_gui_tk_fallback.py`)
-- **Silent fallback is no longer silent**: starting without Qt prints a clear
-  banner naming the interface you actually got and how to install Qt
 
 ### Fixed (v1 audit)
 - **Data loss**: organizing no longer silently overwrites same-named files

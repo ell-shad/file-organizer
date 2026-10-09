@@ -68,6 +68,30 @@ class FileOrganizerApp:
         self.main_frame = tk.Frame(self.root, padx=10, pady=10)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
 
+        # In-window notice: launched from the desktop, stderr goes nowhere,
+        # so the user must be told *in the window* why they got the old UI.
+        self.fallback_banner = tk.Frame(self.main_frame, bg="#FFF3CD",
+                                        highlightthickness=1,
+                                        highlightbackground="#E0A800")
+        self.fallback_banner.pack(fill=tk.X, pady=(0, 8))
+        tk.Label(
+            self.fallback_banner,
+            text="Legacy interface — the modern Qt interface could not be loaded.",
+            bg="#FFF3CD", fg="#7A5B00", anchor="w",
+            font=("Arial", 10, "bold")).pack(fill=tk.X, padx=8, pady=(6, 0))
+        tk.Label(
+            self.fallback_banner,
+            text="PySide6 is not installed. For the modern UI (preview, progress bar, "
+                 "HiDPI scaling) run:\n"
+                 "  sudo apt install python3-pyside6.qtcore python3-pyside6.qtgui "
+                 "python3-pyside6.qtwidgets\n"
+                 "or use the self-contained binary from the project's Releases page.",
+            bg="#FFF3CD", fg="#7A5B00", anchor="w", justify=tk.LEFT,
+            wraplength=700).pack(fill=tk.X, padx=8, pady=(0, 6))
+        tk.Button(self.fallback_banner, text="Dismiss",
+                  command=self.fallback_banner.pack_forget).pack(
+                      anchor="e", padx=8, pady=(0, 6))
+
         # Top section for directory and checkboxes
         top_frame = tk.Frame(self.main_frame)
         top_frame.pack(fill=tk.X, pady=5)

@@ -39,13 +39,19 @@ sudo apt install ./file-organizer_2.0.0_all.deb
 Get the `.deb` from [Releases](https://github.com/ell-shad/file-organizer/releases)
 or build it: `./build-deb.sh`.
 
-You should see the modern Qt interface after installing. If a console
-message appears saying it started the "LEGACY Tk interface", Qt is missing —
-fix it with:
+You should see the modern Qt interface after installing. If you instead get
+the old-looking window with a yellow "Legacy interface" banner at the top,
+Qt is not available — that banner explains exactly what to do:
 
 ```bash
 sudo apt install python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets
 ```
+
+> **Note on Ubuntu 24.04 and older:** those releases carry no PySide6
+> packages in apt at all, so the `.deb` there installs the Tk fallback and
+> recommends Qt without requiring it. For the modern interface on those
+> releases use the [self-contained binary](#self-contained-binary-no-python-no-qt-nothing-to-install)
+> or a venv: `python3 -m venv ~/.venvs/fo && ~/.venvs/fo/bin/pip install PySide6`.
 
 ### Self-contained binary (no Python, no Qt, nothing to install)
 

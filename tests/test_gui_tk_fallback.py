@@ -100,3 +100,20 @@ def test_scan_finds_files_and_enables_organize(app, tmp_path):
     app.check_files_in_directory()
     assert "Found 2 files" in app.progress_bar_label.cget("text")
     assert str(app.organize_btn.cget("state")) == "normal"
+
+
+def test_fallback_banner_exists_and_is_dismissible(app):
+    """The old UI must announce itself, so users are never confused about
+    which interface they are looking at."""
+    assert app.fallback_banner is not None
+    children = app.fallback_banner.winfo_children()
+    texts = [c.cget("text") for c in children if isinstance(c, tkinter.Label)]
+    joined = " ".join(texts)
+    assert "Legacy interface" in joined
+    assert "python3-pyside6" in joined  # actionable install hint
+    # A dismiss button must exist and hide the banner.
+    buttons = [c for c in children if isinstance(c, tkinter.Button)]
+    assert buttons, "banner is not dismissible"
+    app.fallback_banner.pack_forget()
+    app.fallback_banner.master.update()
+    assert app.fallback_banner.winfo_ismapped() == 0
