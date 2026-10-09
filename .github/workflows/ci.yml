@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    name: Tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install (test deps only — Qt not needed for core tests)
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install -e . --no-deps
+      - name: Run tests
+        run: python -m pytest tests/ -q
+
+  gui-smoke:
+    name: Qt GUI smoke test (offscreen)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install system Qt deps
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libxkbcommon0 libdbus-1-3 > /dev/null
+      - name: Install package with Qt
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest PySide6>=6.6
+          pip install -e . --no-deps
+      - name: Launch window offscreen + scan a sample dir
+        run: |
+          mkdir -p /tmp/smoke && echo x > /tmp/smoke/a.jpg && echo y > /tmp/smoke/b.pdf
+          QT_QPA_PLATFORM=offscreen python -c "
+          from file_organizer.gui_qt import MainWindow
+          from file_organizer.config import AppSettings
+          from PySide6.QtWidgets import QApplication
+          app = QApplication([])
+          w = MainWindow(AppSettings())
+          w.show(); w.set_directory('/tmp/smoke')
+          assert w.preview_table.rowCount() == 2, w.preview_table.rowCount()
+          print('smoke OK')
+          "
+
+  package:
+    name: .deb builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build .deb
+        run: |
+          chmod +x build-deb.sh
+          ./build-deb.sh --output-dir dist
+          ls -la dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: dist/*.deb
+
+  cross-distro-core:
+    name: Core tests on Debian (container)
+    runs-on: ubuntu-latest
+    container:
+      image: debian:stable-slim
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Python + pytest
+        run: apt-get update -qq && apt-get install -y -qq python3 python3-pytest > /dev/null
+      - name: Run core tests (no Qt needed)
+        run: PYTHONPATH=src python3 -m pytest tests/ -q
+
+  standalone:
+    name: Self-contained binary (PyInstaller)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install system Qt runtime libs
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libxkbcommon0 libdbus-1-3 libgl1 > /dev/null
+      - name: Install PyInstaller + PySide6
+        run: python -m pip install --upgrade pip && pip install pyinstaller PySide6
+      - name: Build self-contained binary (includes its own smoke test)
+        run: |
+          chmod +x build-standalone.sh
+          PYTHON=python3 ./build-standalone.sh dist
+          ls -lh dist/file-organizer
+      - name: Launch bundled GUI offscreen (proves Qt is inside)
+        run: |
+          mkdir -p /tmp/sg && echo x > /tmp/sg/a.jpg
+          QT_QPA_PLATFORM=offscreen timeout 20 ./dist/file-organizer gui --help 2>&1 | head -3
+          ./dist/file-organizer scan /tmp/sg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-binary
+          path: dist/file-organizer
+
+  install-test:
+    name: Install .deb with apt and run CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build .deb
+        run: |
+          chmod +x build-deb.sh
+          ./build-deb.sh --output-dir dist
+      - name: Install with apt (resolves python3-pyside6 etc.)
+        run: sudo apt install -y ./dist/*.deb
+      - name: CLI works from the installed package
+        run: |
+          mkdir -p /tmp/it && echo x > /tmp/it/a.jpg
+          file-organizer scan /tmp/it
+          file-organizer organize /tmp/it --dry-run

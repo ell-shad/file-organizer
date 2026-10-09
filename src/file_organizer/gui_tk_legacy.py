@@ -1,3 +1,13 @@
+"""Legacy Tkinter GUI (v1.x, deprecated).
+
+Kept as a fallback when PySide6 is unavailable. New development happens in
+:mod:`file_organizer.gui_qt` + :mod:`file_organizer.core`. This module is
+frozen except for critical fixes.
+
+NOTE (v2.0 audit): file-collision overwrite and folder-name traversal issues
+are fixed in ``core.py``; this legacy GUI still overwrites on name clash —
+prefer the Qt GUI / CLI for real use.
+"""
 import os
 import sys
 import shutil
@@ -5,8 +15,14 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog
 from tkinter import ttk
 from collections import defaultdict
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+    _HAS_MPL = True
+except ImportError:  # Tk fallback works without charts
+    plt = None
+    FigureCanvasTkAgg = None
+    _HAS_MPL = False
 
 # Define file categories and their extensions
 FILE_TYPES = {
@@ -88,12 +104,14 @@ class FileOrganizerApp:
         self.log_text = tk.Text(self.main_frame, height=5, state=tk.DISABLED, bg='light gray', fg='black')
         self.log_text.pack(pady=5, fill=tk.BOTH)
 
-        # Matplotlib Plot Section
-        self.fig, self.ax = plt.subplots(figsize=(6, 4))
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.main_frame)
-        self.canvas_widget = self.canvas.get_tk_widget()
-        #self.canvas_widget.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=10)
-        self.update_plot({})
+        # Matplotlib Plot Section (optional; legacy chart)
+        self.fig = self.ax = self.canvas = self.canvas_widget = None
+        if _HAS_MPL:
+            self.fig, self.ax = plt.subplots(figsize=(6, 4))
+            self.canvas = FigureCanvasTkAgg(self.fig, master=self.main_frame)
+            self.canvas_widget = self.canvas.get_tk_widget()
+            #self.canvas_widget.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=10)
+            self.update_plot({})
 
         # Menu Bar
         menubar = tk.Menu(root)
@@ -112,11 +130,12 @@ class FileOrganizerApp:
         """Destroys the root window and quits the main loop."""
         if messagebox.askokcancel("Quit", "Do you want to quit the application?"):
             # Close matplotlib figure to prevent background threads
-            plt.close(self.fig)
+            if _HAS_MPL and self.fig is not None:
+                plt.close(self.fig)
         # Destroy canvas widget
             if self.canvas:
                 self.canvas.get_tk_widget().destroy()
-            
+
             self.root.destroy()
             sys.exit(0) # Ensures the Python process terminates immediately.
 
@@ -146,12 +165,14 @@ class FileOrganizerApp:
             self.selected_directory = directory
             self.dir_label.config(text=f"Selected directory:\n{directory}")
             self.check_files_in_directory()
-            self.canvas_widget.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=10)
+            if self.canvas_widget is not None:
+                self.canvas_widget.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, pady=10)
         else:
             self.dir_label.config(text="No directory selected.")
             self.selected_directory = ""
             self.update_plot({})
-            self.canvas_widget.pack_forget()
+            if self.canvas_widget is not None:
+                self.canvas_widget.pack_forget()
 
         self.update_organize_button_state()
 
@@ -192,6 +213,8 @@ class FileOrganizerApp:
             
     def update_plot(self, file_counts):
         """Updates the pie chart with new file statistics."""
+        if not _HAS_MPL or self.ax is None:
+            return
         self.ax.clear()
         labels, sizes = [], []
         for category, count in file_counts.items():

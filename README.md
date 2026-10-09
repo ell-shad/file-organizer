@@ -1,128 +1,152 @@
 # File Organizer
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/ell-shad/file-organizer/actions/workflows/ci.yml/badge.svg)](https://github.com/ell-shad/file-organizer/actions/workflows/ci.yml)
 [![GitHub release](https://img.shields.io/github/release/ell-shad/file-organizer.svg)](https://github.com/ell-shad/file-organizer/releases)
 
-A powerful GUI application for organizing files by category on Linux systems.
+A modern GUI application for organizing files by category on Linux.
 
-![File Organizer Screenshot](screenshot.png)
+![File Organizer v2 Qt interface](screenshots/main-window-qt.png)
 
-## Features
+## Features (v2.0)
 
-- 📁 Automatically organize files by type (Images, Videos, Documents, etc.)
-- 🔄 Undo support - reverse your last organization
-- 📊 Visual statistics with pie charts
-- 🗑️ Optional empty folder deletion
-- ⚙️ Customizable file type categories
-- 🎨 Clean and intuitive GUI
+- 📁 Organize files by type (Images, Videos, Documents, …) with **live preview**
+- 🖥️ Modern, **resizable, HiDPI-aware Qt interface** (no more fixed 800×800 window)
+- 🔄 Undo support — reverse your last organization, even via CLI
+- 🛡️ **Never silently overwrites**: name clashes become `photo (1).jpg` by default
+- 📊 Built-in distribution chart (no heavy matplotlib dependency for the Qt UI)
+- ⚙️ Customizable categories with validation (blocks `..`, `/`, absolute paths)
+- 🗑️ Conservative empty-folder cleanup (hidden folders & symlinks never touched)
+- ⌨️ Scriptable CLI: `scan`, `organize --dry-run`, `undo`
+- 🐧 Debian-first: **.deb**, self-contained binary (Qt bundled in), portable tarball, or run from source
 
-## Supported File Types
+## Installation (Debian / Ubuntu / Mint / Pop!_OS …)
 
-- **Images**: JPG, PNG, GIF, BMP, SVG, WebP, TIFF
-- **Videos**: MP4, MOV, AVI, MKV, WebM, FLV
-- **Documents**: PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, PPTX
-- **Audio**: MP3, WAV, FLAC, AAC, OGG
-- **Archives**: ZIP, RAR, 7Z, TAR, GZ
-- **Code**: PY, HTML, CSS, JS, C, CPP, JAVA, JSON, XML
-- And more...
+### Native package (recommended)
 
-## Installation
-
-### Debian/Ubuntu (Recommended)
-
-Download the latest `.deb` package from [Releases](https://github.com/ell-shad/file-organizer/releases) and install:
 ```bash
-sudo dpkg -i file-organizer_1.0.0_all.deb
+sudo apt install ./file-organizer_2.0.0_all.deb
 ```
 
-Or double-click the .deb file in your file manager.
+Get the `.deb` from [Releases](https://github.com/ell-shad/file-organizer/releases)
+or build it: `./build-deb.sh`.
 
-### From Source
+### Self-contained binary (no Python, no Qt, nothing to install)
+
+Download the `file-organizer` binary from [Releases](https://github.com/ell-shad/file-organizer/releases),
+`chmod +x` it, run it. PySide6/Qt is bundled inside, so it works on any
+Debian-based system without apt, pip, or Python:
+
 ```bash
-# Clone the repository
+./file-organizer                    # GUI
+./file-organizer organize ~/Downloads --dry-run
+```
+
+Build it yourself with `./build-standalone.sh` (needs `pip install pyinstaller PySide6`).
+
+### Run without installing
+
+No root, no `.deb` — straight from a source checkout:
+
+```bash
 git clone https://github.com/ell-shad/file-organizer.git
 cd file-organizer
-
-# Install dependencies
-sudo apt-get install python3 python3-tk python3-pip
-pip3 install matplotlib
-
-# Run the application
-python3 file_organizer.py
+./run.sh scan ~/Downloads                  # CLI: standard library only, always works
+./run.sh organize ~/Downloads --dry-run
+./run.sh                                   # GUI (see below)
 ```
+
+The CLI needs nothing but Python 3.9+. The GUI needs one of:
+- Qt interface: `sudo apt install python3-pyside6` (modern UI), or
+- Legacy Tk interface: `sudo apt install python3-tk` + `./run.sh gui --toolkit tk`
+  (no pip packages required).
+
+To get Qt without touching system packages:
+```bash
+python3 -m venv /tmp/fo && /tmp/fo/bin/pip install PySide6
+PYTHONPATH=src /tmp/fo/bin/python -m file_organizer gui
+```
+
+### Portable (no root)
+
+Download `file-organizer-*-portable.tar.gz` from Releases, extract, run
+`./file-organizer-portable.sh` (needs `python3-pyside6` + `python3-tk` from apt).
 
 ## Usage
 
-1. Launch "File Organizer" from your applications menu
-2. Click "Select Directory" and choose the folder to organize
-3. Select which file categories you want to organize
-4. Click "Organize" to sort files into category folders
-5. Use "Undo Last Action" if needed
+**GUI:** launch *File Organizer* from your app menu (or run `file-organizer`),
+pick a folder (or drag & drop it), tick categories, hit **Preview…**,
+then **Organize**.
 
-## Building from Source
+**CLI:**
 
-To build the .deb package yourself:
 ```bash
-chmod +x build-deb.sh
-./build-deb.sh
-sudo dpkg -i file-organizer.deb
+file-organizer scan ~/Downloads
+file-organizer organize ~/Downloads --dry-run
+file-organizer organize ~/Downloads --only Images,Documents --conflict rename
+file-organizer organize ~/Downloads --include-other --delete-empty
+file-organizer undo
 ```
 
-## Uninstallation
+See `man file-organizer` after installing, or `file-organizer organize --help`.
+
+## Safety notes
+
+- Default conflict policy is `rename` — existing destination files are
+  **never** replaced unless you explicitly choose `--conflict overwrite`
+  (the GUI asks for confirmation in that mode).
+- Folder names are validated: `..`, path separators, and absolute paths
+  are rejected in the category editor.
+- Empty-folder cleanup skips hidden directories, symlinks, and anything
+  outside the target folder.
+- Symlinks are listed but never moved or followed.
+
+## Building & testing
+
 ```bash
-sudo dpkg -r file-organizer
+PYTHONPATH=src python -m pytest tests/ -q   # 35 tests, no Qt required
+./build-deb.sh --output-dir dist              # .deb
+./build-all.sh --output-dir dist              # .deb + tarball + portable
+./build-standalone.sh dist                    # self-contained binary (PyInstaller)
 ```
 
-## Requirements
+Pushing a `v*` tag runs `.github/workflows/release.yml`, which tests,
+builds everything, and publishes a GitHub Release with artifacts.
 
-- Python 3.8 or higher
-- Tkinter (python3-tk)
-- Matplotlib
+## Project layout
 
-## Screenshots
+| Path | What |
+|---|---|
+| `src/file_organizer/core.py` | GUI-independent logic (moves, undo, scan, validation) |
+| `src/file_organizer/gui_qt.py` | Qt interface (default) |
+| `src/file_organizer/gui_tk_legacy.py` | Frozen v1 Tk fallback |
+| `src/file_organizer/cli.py` | `scan`/`organize`/`undo`/`categories`/`gui` |
+| `src/file_organizer/config.py` | XDG JSON settings |
+| `tests/` | pytest suite |
+| `DEBIAN/`, `build-deb.sh`, `build-all.sh` | Debian packaging |
+| `build-standalone.sh`, `packaging/` | PyInstaller self-contained binary |
+| `.github/workflows/` | CI + automated releases |
 
-### Main Window
-![Main Window](screenshots/main-window.png)
-
-### File Statistics
-![Statistics](screenshots/statistics.png)
-
-### File Type Extensions
-![Statistics](screenshots/file_types.png)
+Legacy v1 screenshots are kept under `screenshots/` (`main-window.png`,
+`statistics.png`, `file_types.png`) for reference.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) — especially the safety
+rules — then open a PR. Bug reports: use the issue templates.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
 
 ## Author
 
-**Elshad Guliyev**
-- GitHub: [@ell-shad](https://github.com/ell-shad)
-- Email: ellshad.012@gmail.com
-
-## Acknowledgments
-
-- Built with Python and Tkinter
-- Uses Matplotlib for data visualization
-- The utilization of AI tools, namely Anthropic Claude and Google Gemini, occurred in various stages of the application's production. These tools were employed in conjunction with human modification and review processes.
+**Elshad Guliyev** — [@ell-shad](https://github.com/ell-shad) · ellshad.012@gmail.com
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
-
-## Support
-
-If you encounter any issues, please [open an issue](https://github.com/ell-shad/file-organizer/issues) on GitHub.
+See [CHANGELOG.md](CHANGELOG.md).
 
 ---
+
 ⭐ Star this repository if you find it helpful!

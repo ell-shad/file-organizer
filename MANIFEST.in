@@ -1,0 +1,6 @@
+include README.md CHANGELOG.md LICENSE CONTRIBUTING.md
+include file-organizer.png screenshot.png
+include man/file-organizer.1
+include usr/bin/file-organizer
+include usr/share/applications/file-organizer.desktop
+recursive-include tests *.py

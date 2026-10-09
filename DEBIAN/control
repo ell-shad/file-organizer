@@ -1,10 +1,16 @@
 Package: file-organizer
-Version: 1.0.0
+Version: 2.0.0
 Section: utils
 Priority: optional
 Architecture: all
-Depends: python3 (>= 3.8), python3-tk, python3-matplotlib
-Maintainer: Your Name <your.email@example.com>
-Description: File Organizer
- A graphical tool to organize files by category with undo support
- and statistics visualization.
+Depends: python3 (>= 3.9), python3-pyside6, python3-tk
+Recommends: python3-matplotlib
+Maintainer: Elshad Guliyev <ellshad.012@gmail.com>
+Homepage: https://github.com/ell-shad/file-organizer
+Description: File Organizer - sort files by category
+ A modern graphical tool to organize files into category folders
+ (Images, Documents, Audio, …) with live preview, undo support,
+ and a scriptable CLI.
+ .
+ v2.0 uses a resizable HiDPI-aware Qt interface (Tk fallback included)
+ and never silently overwrites existing files.

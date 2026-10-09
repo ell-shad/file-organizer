@@ -1,0 +1,29 @@
+name: Bug report
+description: Report a problem with File Organizer
+body:
+  - type: input
+    attributes:
+      label: Version
+      description: "e.g. 2.0.0 (see Help → About, or `file-organizer --version`)"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Distro / desktop
+      description: "e.g. Ubuntu 24.04 GNOME, Debian 12 KDE, Mint 21 Xfce"
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Interface
+      options: [Qt GUI, Legacy Tk GUI, CLI]
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what went wrong?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Logs
+      description: Paste the Log tab / terminal output if relevant.

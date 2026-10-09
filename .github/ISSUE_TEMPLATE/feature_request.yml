@@ -1,0 +1,9 @@
+name: Feature request
+description: Suggest an improvement
+body:
+  - type: textarea
+    attributes:
+      label: Proposal
+      description: What should the app do, and why?
+    validations:
+      required: true

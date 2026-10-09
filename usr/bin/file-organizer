@@ -1,2 +1,24 @@
 #!/bin/bash
-python3 /usr/share/file-organizer/file_organizer.py "$@"
+# Launcher for File Organizer.
+# Prefers a self-contained bundled binary (PyInstaller, includes PySide6/Qt)
+# when present; otherwise runs the packaged Python source (needs
+# python3-pyside6 for the Qt UI, or python3-tk for the legacy Tk UI).
+set -e
+# .../file-organizer/usr/bin/file-organizer -> .../file-organizer/usr/share/file-organizer
+SELF_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+for APP_DIR in "$SELF_DIR/../share/file-organizer" /usr/share/file-organizer; do
+    if [ -d "$APP_DIR" ]; then
+        if [ -x "$APP_DIR/bin/file-organizer" ]; then
+            exec "$APP_DIR/bin/file-organizer" "$@"
+        fi
+        if [ -d "$APP_DIR/src" ]; then
+            export PYTHONPATH="$APP_DIR/src${PYTHONPATH:+:$PYTHONPATH}"
+            if [ $# -eq 0 ]; then
+                set -- gui
+            fi
+            exec python3 -m file_organizer "$@"
+        fi
+    fi
+done
+echo "file-organizer: application files not found (expected /usr/share/file-organizer)." >&2
+exit 1

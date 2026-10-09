@@ -1,15 +1,15 @@
 #!/bin/bash
+# postinst for file-organizer: refresh caches only.
+# NOTE (v2.0): no longer pip-installs anything — all runtime dependencies
+# are declared in DEBIAN/control and resolved by apt. (The old script ran
+# `pip install matplotlib --break-system-packages`, which can break
+# distro-managed Python environments.)
 set -e
 
-# Ensure matplotlib is installed
-python3 -m pip install matplotlib --break-system-packages 2>/dev/null || true
-
-# Update icon cache
 if [ -x /usr/bin/gtk-update-icon-cache ]; then
-    gtk-update-icon-cache -f -t /usr/share/pixmaps 2>/dev/null || true
+    gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
 fi
 
-# Update desktop database
 if [ -x /usr/bin/update-desktop-database ]; then
     update-desktop-database -q /usr/share/applications 2>/dev/null || true
 fi

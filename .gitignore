@@ -36,6 +36,17 @@ env/
 file-organizer/
 file-organizer.deb
 *.deb
+*.rpm
+dist/
+*.tar.gz
+*-portable/
+.flatpak-builder/
+build-dir/
+# PyInstaller work dirs (script stages them in mktemp, guard anyway)
+/file-organizer.spec
+
+# Local venvs
+.venv/
 
 # OS
 .DS_Store

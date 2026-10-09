@@ -1,0 +1,83 @@
+.TH FILE-ORGANIZER 1 "October 2026" "file-organizer 2.0.0" "User Commands"
+.SH NAME
+file-organizer \- organize files into category folders
+.SH SYNOPSIS
+.B file-organizer
+.RI [ COMMAND ] " [options]"
+.br
+.B file-organizer gui
+.RI [ \-\-toolkit " auto|qt|tk" ]
+.br
+.B file-organizer scan
+.I DIRECTORY
+.RI [ \-\-json ]
+.br
+.B file-organizer organize
+.I DIRECTORY
+.RI [ options ]
+.br
+.B file-organizer undo
+.RI [ \-\-yes ]
+.SH DESCRIPTION
+File Organizer sorts files into category folders (Images, Documents, Audio, …)
+with a live preview, undo support, and a scriptable command-line interface.
+Running it without arguments (or via the desktop launcher) opens the graphical
+interface. Moves never silently overwrite existing files: clashes are renamed
+.RI ( image.jpg " \(-> " image\ (1).jpg )
+by default.
+.SH ORGANIZE OPTIONS
+.TP
+.BR \-\-only " Categories"
+Comma-separated subset of categories (default: all).
+.TP
+.BR \-\-include\-other
+Also file uncategorized items into an
+.IR Other /
+folder.
+.TP
+.BR \-\-recursive
+Descend into subdirectories (destination and hidden folders excluded).
+.TP
+.BR \-\-conflict " rename|skip|overwrite"
+What to do when the destination exists (default:
+.BR rename ).
+.B overwrite
+replaces files and asks for confirmation in the GUI.
+.TP
+.BR \-\-delete\-empty
+Remove empty folders afterwards (hidden folders and symlinks are never removed).
+.TP
+.BR \-\-dry\-run
+Print the move plan without moving anything.
+.TP
+.BR \-\-yes
+Skip the confirmation prompt (for scripts).
+.SH EXAMPLES
+Show what would happen, moving nothing:
+.PP
+.RS
+file-organizer organize ~/Downloads --dry-run
+.RE
+.PP
+Organize only images and documents, renaming on conflict:
+.PP
+.RS
+file-organizer organize ~/Downloads --only Images,Documents
+.RE
+.PP
+Reverse the last run:
+.PP
+.RS
+file-organizer undo
+.RE
+.SH FILES
+.TP
+.I ~/.config/file-organizer/settings.json
+Categories and preferences.
+.TP
+.I ~/.local/state/file-organizer/last-run.json
+Undo log of the most recent organize run.
+.SH SEE ALSO
+.BR python3 (1)
+.SH AUTHOR
+Elshad Guliyev <ellshad.012@gmail.com>. MIT License.
