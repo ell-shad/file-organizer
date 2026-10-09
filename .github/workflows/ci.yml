@@ -113,6 +113,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Build .deb
         run: |
           chmod +x build-deb.sh
@@ -122,6 +125,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt install -y ./dist/*.deb
           dpkg -s file-organizer | grep -E "^(Status|Depends)"
+      - name: Install pytest for the GUI fallback tests
+        run: python -m pip install --upgrade pip && pip install pytest
       - name: Qt subpackages resolve where the release ships them
         # Ubuntu ships PySide6 as python3-pyside6.qtcore/qtgui/qtwidgets on
         # newer releases and not at all on some older ones, so Qt is a
