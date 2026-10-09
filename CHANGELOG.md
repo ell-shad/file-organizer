@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-10-09
+
+### Fixed (v2.0.1 audit)
+- **`.deb` silently installed the legacy GUI**: PySide6 ships on Ubuntu as
+  the subpackages `python3-pyside6.qtcore`/`qtgui`/`qtwidgets` (there is no
+  `python3-pyside6` metapackage), so the old dependency never resolved and
+  apt fell through to the Tk alternative. Qt is now a `Recommends` using
+  the real package names: installs the Qt UI where the release ships Qt,
+  and still installs cleanly where it does not (Ubuntu 24.04 has no PySide6
+  in apt at all)
+- **The fallback now announces itself in-window**: a yellow dismissible
+  banner explains that the legacy interface is active and gives the exact
+  command to install Qt, instead of the app silently looking like v1
+- **Empty chart in the Tk fallback**: without matplotlib the fallback drew
+  nothing at all; it now renders a dependency-free pie + legend on a native
+  Tk Canvas (covered by `tests/test_gui_tk_fallback.py`)
+- **Desktop-file icon lookup** hardened for XDG icon themes
+
+### Changed
+- Official support is stated as Debian-based systems; the `.deb` is the
+  primary installation method
+
 ## [2.0.0] - 2026-10-09
 
 Full rewrite of the app layer around a shared, tested core.
