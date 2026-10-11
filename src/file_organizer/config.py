@@ -32,6 +32,8 @@ class AppSettings:
         conflict: str = "rename",
         delete_empty: bool = False,
         recent_dirs: list[str] | None = None,
+        theme: str = "system",
+        group_by_date: str = "",
     ) -> None:
         self.categories = categories if categories is not None else {
             k: list(v) for k, v in DEFAULT_CATEGORIES.items()
@@ -41,6 +43,9 @@ class AppSettings:
         self.conflict = conflict if conflict in ("rename", "skip", "overwrite") else "rename"
         self.delete_empty = delete_empty
         self.recent_dirs = recent_dirs or []
+        self.theme = theme if theme in ("system", "light", "dark") else "system"
+        self.group_by_date = group_by_date if group_by_date in (
+            "", "year", "year-month", "year-month-day") else ""
 
     def to_dict(self) -> dict:
         return {
@@ -50,6 +55,8 @@ class AppSettings:
             "conflict": self.conflict,
             "delete_empty": self.delete_empty,
             "recent_dirs": self.recent_dirs[:10],
+            "theme": self.theme,
+            "group_by_date": self.group_by_date,
         }
 
     @classmethod
@@ -71,6 +78,10 @@ class AppSettings:
         if data.get("conflict") in ("rename", "skip", "overwrite"):
             obj.conflict = data["conflict"]
         obj.delete_empty = bool(data.get("delete_empty", False))
+        if data.get("theme") in ("system", "light", "dark"):
+            obj.theme = data["theme"]
+        if data.get("group_by_date") in ("", "year", "year-month", "year-month-day"):
+            obj.group_by_date = data.get("group_by_date", "")
         recent = data.get("recent_dirs", [])
         if isinstance(recent, list):
             obj.recent_dirs = [str(d) for d in recent if isinstance(d, str)][:10]

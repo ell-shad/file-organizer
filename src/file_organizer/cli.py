@@ -25,6 +25,7 @@ from .core import (
     OTHER_CATEGORY,
     clear_undo_log,
     delete_empty_dirs,
+    find_duplicates,
     find_empty_dirs,
     load_undo_log,
     organize_files,
@@ -33,6 +34,16 @@ from .core import (
     scan_directory,
     undo_moves,
 )
+
+
+def _human_size(num: int) -> str:
+    if num is None or num < 0:
+        return "—"
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if num < 1024:
+            return f"{num:.0f} {unit}" if unit == "B" else f"{num:.1f} {unit}"
+        num /= 1024
+    return f"{num:.1f} PB"
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -60,6 +71,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
     u = sub.add_parser("undo", help="Reverse the last organize run.")
     u.add_argument("--yes", action="store_true", help="Skip the confirmation prompt.")
+
+    d = sub.add_parser("find-duplicates",
+                       help="Report duplicate files (same content) without deleting them.")
+    d.add_argument("directory")
+    d.add_argument("--recursive", action="store_true", help="Descend into subdirectories.")
+    d.add_argument("--json", action="store_true", help="Machine-readable output.")
 
     c = sub.add_parser("categories", help="List configured categories.")
     c.add_argument("--json", action="store_true")
@@ -90,6 +107,27 @@ def cmd_scan(args, settings: AppSettings) -> int:
     return 0
 
 
+def cmd_find_duplicates(args, settings: AppSettings) -> int:
+    directory = _require_dir(args.directory)
+    groups = find_duplicates(directory, recursive=args.recursive)
+    if args.json:
+        print(json.dumps({"directory": directory, "groups": groups}, indent=2))
+        return 0
+    if not groups:
+        print("No duplicate files found.")
+        return 0
+    wasted = 0
+    for i, group in enumerate(groups, 1):
+        size = os.path.getsize(group[0])
+        wasted += size * (len(group) - 1)
+        print(f"Group {i} ({_human_size(size)} each):")
+        for path in group:
+            print(f"  {path}")
+    print(f"\n{len(groups)} duplicate group(s); "
+          f"{_human_size(wasted)} could be reclaimed.")
+    return 0
+
+
 def cmd_organize(args, settings: AppSettings) -> int:
     directory = _require_dir(args.directory)
     selected = None
@@ -117,15 +155,13 @@ def cmd_organize(args, settings: AppSettings) -> int:
             print("Aborted.")
             return 1
 
-    total = len(plan)
-
     def progress(i: int, n: int, name: str) -> None:
         print(f"\r[{i}/{n}] {name}", end="", flush=True)
 
     result = organize_files(
         directory, settings.categories, selected,
         include_other=args.include_other, recursive=args.recursive,
-        conflict=args.conflict, progress_cb=progress,
+        conflict=args.conflict, progress_cb=progress, plan=plan,
     )
     print()
     if result["moved"]:
@@ -184,6 +220,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_organize(args, settings)
     if args.command == "undo":
         return cmd_undo(args, settings)
+    if args.command == "find-duplicates":
+        return cmd_find_duplicates(args, settings)
     if args.command == "categories":
         return cmd_categories(args, settings)
     if args.command == "gui":
